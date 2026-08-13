@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pizza_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pizza_user
+      POSTGRES_PASSWORD: pizza_password
+      POSTGRES_DB: pizza_delivery
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: pizza_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://pizza_user:pizza_password@db:5432/pizza_delivery
+      JWT_SECRET: minha-chave-secreta-super-forte
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

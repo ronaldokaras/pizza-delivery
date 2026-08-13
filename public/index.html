@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizzaria Delícia - Cardápio</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">🍕 Pizzaria Delícia</div>
+    <div id="navLinks">
+      <a href="login.html" id="loginLink">Entrar</a>
+      <a href="register.html" id="registerLink">Cadastrar</a>
+      <a href="user.html" id="userLink" class="hidden">Meus Pedidos</a>
+      <a href="admin.html" id="adminLink" class="hidden">Admin</a>
+      <a href="#" id="logoutLink" class="hidden">Sair</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Nosso Cardápio</h1>
+    <div id="pizzaGrid" class="grid"></div>
+
+    <!-- Modificado: style removido e classe 'cart-card' adicionada -->
+    <div class="card cart-card">
+      <h2>🛒 Carrinho</h2>
+      <div id="cartContainer">
+        <ul id="cartItems" class="cart-items"></ul>
+        <!-- Modificado: style removido, formatação foi para o CSS -->
+        <p id="cartTotal">Total: R$ 0,00</p>
+        <button id="checkoutBtn" class="btn">Finalizar Pedido</button>
+      </div>
+      <!-- Modificado: style removido, formatação foi para o CSS -->
+      <p id="cartEmpty">Seu carrinho está vazio.</p>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
