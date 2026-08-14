@@ -18,8 +18,9 @@ async function loadOrders() {
 
     container.innerHTML = orders.map(order => `
       <div class="card">
-        <p><strong>Pedido #${order.id}</strong> - ${new Date(order.created_at).toLocaleString('pt-BR')}</p>
+        <p><strong>Pedido #${order.id}</strong> - ${new Date(order.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
         <p>Status: <span class="status-badge status-${order.status}">${order.status}</span></p>
+        <p>Pagamento: ${order.payment_method || 'Não informado'}</p>
         <ul>
           ${order.items.map(item => `<li>${item.name} x${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}</li>`).join('')}
         </ul>
@@ -27,13 +28,14 @@ async function loadOrders() {
       </div>
     `).join('');
   } catch (err) {
-    console.error('Erro ao carregar pedidos:', err);
+    showToast('Erro ao carregar pedidos', 'error');
   }
 }
 
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('cart');
   window.location.href = 'index.html';
 }
 

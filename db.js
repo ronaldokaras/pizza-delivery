@@ -1,19 +1,16 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-// Configuração da conexão usando variáveis de ambiente
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('localhost') 
-    ? false 
-    : { rejectUnauthorized: false } // para Render
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('sslmode=require')
+    ? { rejectUnauthorized: false }
+    : false
 });
 
-// Função para inicializar o banco (criar tabelas e seed)
 async function initDB() {
   const client = await pool.connect();
   try {
-    // Criar tabelas
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -38,11 +35,11 @@ async function initDB() {
         items TEXT NOT NULL,
         total REAL NOT NULL,
         status TEXT DEFAULT 'pending',
+        payment_method TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // Seed admin
     const adminExists = await client.query('SELECT id FROM users WHERE email = $1', ['admin@example.com']);
     if (adminExists.rowCount === 0) {
       const hashedPassword = bcrypt.hashSync('admin123', 10);
@@ -53,7 +50,6 @@ async function initDB() {
       console.log('✅ Usuário admin criado: admin@example.com / admin123');
     }
 
-    // Seed pizzas
     const pizzaCount = await client.query('SELECT COUNT(*) FROM pizzas');
     if (parseInt(pizzaCount.rows[0].count) === 0) {
       const pizzas = [

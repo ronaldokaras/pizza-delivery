@@ -12,6 +12,9 @@ router.post('/register', async (req, res) => {
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Preencha todos os campos' });
   }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'A senha deve ter no mínimo 6 caracteres' });
+  }
 
   try {
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);

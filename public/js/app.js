@@ -1,7 +1,8 @@
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 const token = localStorage.getItem('token');
+let allPizzas = [];
 
-// Atualizar navegação conforme login
+// Navegação
 function updateNav() {
   const loginLink = document.getElementById('loginLink');
   const registerLink = document.getElementById('registerLink');
@@ -15,7 +16,6 @@ function updateNav() {
     userLink.classList.remove('hidden');
     logoutLink.classList.remove('hidden');
 
-    // Se for admin, mostra link admin
     const user = JSON.parse(localStorage.getItem('user'));
     if (user && user.role === 'admin') {
       adminLink.classList.remove('hidden');
@@ -27,25 +27,38 @@ function updateNav() {
 async function loadPizzas() {
   try {
     const res = await fetch('/api/menu');
-    const pizzas = await res.json();
-    const grid = document.getElementById('pizzaGrid');
-    grid.innerHTML = pizzas.map(pizza => `
-      <div class="pizza-card">
-        <img src="${pizza.image_url || 'https://via.placeholder.com/300x180?text=Pizza'}" alt="${pizza.name}">
-        <div class="pizza-info">
-          <h3>${pizza.name}</h3>
-          <p>${pizza.description || ''}</p>
-          <p class="price">R$ ${pizza.price.toFixed(2)}</p>
-          <button class="btn" onclick="addToCart(${pizza.id}, '${pizza.name}', ${pizza.price})">Adicionar</button>
-        </div>
-      </div>
-    `).join('');
+    allPizzas = await res.json();
+    renderPizzas(allPizzas);
   } catch (err) {
-    console.error('Erro ao carregar pizzas:', err);
+    showToast('Erro ao carregar pizzas', 'error');
   }
 }
 
-// Adicionar ao carrinho
+function renderPizzas(pizzas) {
+  const grid = document.getElementById('pizzaGrid');
+  grid.innerHTML = pizzas.map(pizza => `
+    <div class="pizza-card">
+      <img src="${pizza.image_url || 'https://via.placeholder.com/300x180?text=Pizza'}" alt="${pizza.name}">
+      <div class="pizza-info">
+        <h3>${pizza.name}</h3>
+        <p>${pizza.description || ''}</p>
+        <p class="price">R$ ${pizza.price.toFixed(2)}</p>
+        <button class="btn" onclick="addToCart(${pizza.id}, '${pizza.name}', ${pizza.price})">Adicionar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterPizzas() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allPizzas.filter(p =>
+    p.name.toLowerCase().includes(search) ||
+    (p.description && p.description.toLowerCase().includes(search))
+  );
+  renderPizzas(filtered);
+}
+
+// Carrinho
 function addToCart(id, name, price) {
   const existing = cart.find(item => item.pizza_id === id);
   if (existing) {
@@ -57,14 +70,23 @@ function addToCart(id, name, price) {
   renderCart();
 }
 
-// Remover do carrinho
 function removeFromCart(id) {
   cart = cart.filter(item => item.pizza_id !== id);
   localStorage.setItem('cart', JSON.stringify(cart));
   renderCart();
 }
 
-// Renderizar carrinho
+function changeQty(id, delta) {
+  const item = cart.find(i => i.pizza_id === id);
+  if (!item) return;
+  item.quantity += delta;
+  if (item.quantity <= 0) {
+    cart = cart.filter(i => i.pizza_id !== id);
+  }
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCart();
+}
+
 function renderCart() {
   const cartItems = document.getElementById('cartItems');
   const cartTotal = document.getElementById('cartTotal');
@@ -84,7 +106,12 @@ function renderCart() {
 
   cartItems.innerHTML = cart.map(item => `
     <li class="cart-item">
-      <span>${item.name} x${item.quantity}</span>
+      <span>${item.name}</span>
+      <div class="qty-controls">
+        <button onclick="changeQty(${item.pizza_id}, -1)">−</button>
+        <span>${item.quantity}</span>
+        <button onclick="changeQty(${item.pizza_id}, 1)">+</button>
+      </div>
       <span>R$ ${(item.price * item.quantity).toFixed(2)}</span>
       <button onclick="removeFromCart(${item.pizza_id})">🗑️</button>
     </li>
@@ -94,15 +121,25 @@ function renderCart() {
   cartTotal.textContent = `Total: R$ ${total.toFixed(2)}`;
 }
 
-// Finalizar pedido
-async function checkout() {
+// Modal de pagamento
+function openPaymentModal() {
   if (!token) {
-    alert('Você precisa estar logado para fazer um pedido.');
+    showToast('Você precisa estar logado para fazer um pedido.', 'warning');
     window.location.href = 'login.html';
     return;
   }
   if (cart.length === 0) return;
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  document.getElementById('paymentTotal').textContent = `Total: R$ ${total.toFixed(2)}`;
+  document.getElementById('paymentModal').classList.remove('hidden');
+}
 
+function closePaymentModal() {
+  document.getElementById('paymentModal').classList.add('hidden');
+}
+
+async function confirmPayment() {
+  const method = document.getElementById('paymentMethod').value;
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   try {
     const res = await fetch('/api/orders', {
@@ -113,37 +150,37 @@ async function checkout() {
       },
       body: JSON.stringify({
         items: cart,
-        total: total
+        total: total,
+        payment_method: method
       })
     });
 
     if (res.ok) {
-      alert('Pedido realizado com sucesso!');
+      showToast('Pedido realizado com sucesso!', 'success');
       cart = [];
       localStorage.setItem('cart', JSON.stringify(cart));
       renderCart();
+      closePaymentModal();
     } else {
       const error = await res.json();
-      alert(error.error || 'Erro ao fazer pedido');
+      showToast(error.error || 'Erro ao fazer pedido', 'error');
     }
   } catch (err) {
-    console.error('Erro:', err);
-    alert('Erro ao conectar com o servidor');
+    showToast('Erro de conexão', 'error');
   }
 }
 
-// Logout
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('cart');
   window.location.href = 'index.html';
 }
 
-// Event listeners
 document.addEventListener('DOMContentLoaded', () => {
   updateNav();
   loadPizzas();
   renderCart();
-  document.getElementById('checkoutBtn').addEventListener('click', checkout);
+  document.getElementById('checkoutBtn').addEventListener('click', openPaymentModal);
   document.getElementById('logoutLink').addEventListener('click', logout);
 });

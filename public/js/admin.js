@@ -5,28 +5,26 @@ if (!token) {
 
 let pizzas = [];
 let orders = [];
+let lastOrderId = 0;
 
-// Verificar se é admin
 function checkAdmin() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user || user.role !== 'admin') {
-    alert('Acesso restrito');
+    showToast('Acesso restrito', 'error');
     window.location.href = 'index.html';
   }
 }
 
-// Carregar pizzas
 async function loadPizzas() {
   try {
     const res = await fetch('/api/menu');
     pizzas = await res.json();
     renderPizzaTable();
   } catch (err) {
-    console.error('Erro ao carregar pizzas:', err);
+    showToast('Erro ao carregar pizzas', 'error');
   }
 }
 
-// Carregar pedidos
 async function loadOrders() {
   try {
     const res = await fetch('/api/orders/all', {
@@ -35,11 +33,10 @@ async function loadOrders() {
     orders = await res.json();
     renderOrdersTable();
   } catch (err) {
-    console.error('Erro ao carregar pedidos:', err);
+    showToast('Erro ao carregar pedidos', 'error');
   }
 }
 
-// Renderizar tabela de pizzas
 function renderPizzaTable() {
   const tbody = document.querySelector('#pizzaTable tbody');
   tbody.innerHTML = pizzas.map(p => `
@@ -55,7 +52,6 @@ function renderPizzaTable() {
   `).join('');
 }
 
-// Renderizar tabela de pedidos
 function renderOrdersTable() {
   const tbody = document.querySelector('#ordersTable tbody');
   tbody.innerHTML = orders.map(o => `
@@ -65,7 +61,7 @@ function renderOrdersTable() {
       <td>${o.items.map(i => `${i.name} x${i.quantity}`).join(', ')}</td>
       <td>R$ ${o.total.toFixed(2)}</td>
       <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-      <td>${new Date(o.created_at).toLocaleString('pt-BR')}</td>
+      <td>${new Date(o.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
       <td>
         <select onchange="updateOrderStatus(${o.id}, this.value)">
           <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pendente</option>
@@ -78,7 +74,6 @@ function renderOrdersTable() {
   `).join('');
 }
 
-// Adicionar pizza
 async function addPizza(e) {
   e.preventDefault();
   const name = document.getElementById('pizzaName').value;
@@ -96,19 +91,18 @@ async function addPizza(e) {
       body: JSON.stringify({ name, description, price, image_url })
     });
     if (res.ok) {
-      alert('Pizza adicionada!');
+      showToast('Pizza adicionada!', 'success');
       document.getElementById('pizzaForm').reset();
       loadPizzas();
     } else {
       const data = await res.json();
-      alert(data.error || 'Erro ao adicionar');
+      showToast(data.error || 'Erro ao adicionar', 'error');
     }
   } catch (err) {
-    alert('Erro de conexão');
+    showToast('Erro de conexão', 'error');
   }
 }
 
-// Excluir pizza
 async function deletePizza(id) {
   if (!confirm('Excluir esta pizza?')) return;
   try {
@@ -117,15 +111,14 @@ async function deletePizza(id) {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      alert('Pizza excluída');
+      showToast('Pizza excluída', 'success');
       loadPizzas();
     }
   } catch (err) {
-    alert('Erro de conexão');
+    showToast('Erro de conexão', 'error');
   }
 }
 
-// Editar pizza (simples: prompt para novos valores)
 async function editPizza(id) {
   const pizza = pizzas.find(p => p.id === id);
   const name = prompt('Nome:', pizza.name);
@@ -145,15 +138,14 @@ async function editPizza(id) {
       body: JSON.stringify({ name, description, price: parseFloat(price), image_url })
     });
     if (res.ok) {
-      alert('Pizza atualizada');
+      showToast('Pizza atualizada', 'success');
       loadPizzas();
     }
   } catch (err) {
-    alert('Erro de conexão');
+    showToast('Erro de conexão', 'error');
   }
 }
 
-// Atualizar status do pedido
 async function updateOrderStatus(orderId, status) {
   try {
     const res = await fetch(`/api/orders/${orderId}/status`, {
@@ -165,28 +157,48 @@ async function updateOrderStatus(orderId, status) {
       body: JSON.stringify({ status })
     });
     if (res.ok) {
-      alert('Status atualizado');
+      showToast('Status atualizado', 'success');
       loadOrders();
     } else {
       const data = await res.json();
-      alert(data.error || 'Erro');
+      showToast(data.error || 'Erro', 'error');
     }
   } catch (err) {
-    alert('Erro de conexão');
+    showToast('Erro de conexão', 'error');
   }
 }
 
-// Logout
+// Polling para novos pedidos
+async function checkNewOrders() {
+  try {
+    const res = await fetch('/api/orders/all', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const newOrders = await res.json();
+    if (newOrders.length > 0 && newOrders[0].id > lastOrderId) {
+      showToast(`🛒 Novo pedido #${newOrders[0].id} recebido!`, 'warning', 5000);
+      lastOrderId = newOrders[0].id;
+      loadOrders();
+    }
+  } catch (err) {
+    console.error('Erro ao verificar novos pedidos:', err);
+  }
+}
+
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('cart');
   window.location.href = 'index.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAdmin();
   loadPizzas();
-  loadOrders();
+  loadOrders().then(() => {
+    if (orders.length > 0) lastOrderId = orders[0].id;
+  });
   document.getElementById('pizzaForm').addEventListener('submit', addPizza);
   document.getElementById('logoutLink').addEventListener('click', logout);
+  setInterval(checkNewOrders, 10000); // a cada 10s
 });

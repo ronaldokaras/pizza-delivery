@@ -21,10 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('user', JSON.stringify(data.user));
           window.location.href = 'index.html';
         } else {
-          alert(data.error || 'Erro ao entrar');
+          showToast(data.error || 'Erro ao entrar', 'error');
         }
       } catch (err) {
-        alert('Erro de conexão');
+        showToast('Erro de conexão', 'error');
       }
     });
   }
@@ -49,10 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('user', JSON.stringify(data.user));
           window.location.href = 'index.html';
         } else {
-          alert(data.error || 'Erro ao cadastrar');
+          showToast(data.error || 'Erro ao cadastrar', 'error');
         }
       } catch (err) {
-        alert('Erro de conexão');
+        showToast('Erro de conexão', 'error');
       }
     });
   }

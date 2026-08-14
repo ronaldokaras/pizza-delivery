@@ -20,22 +20,44 @@
 
   <div class="container">
     <h1>Nosso Cardápio</h1>
+
+    <div class="card">
+      <input type="text" id="searchInput" placeholder="Buscar pizza..." oninput="filterPizzas()">
+    </div>
+
     <div id="pizzaGrid" class="grid"></div>
 
-    <!-- Modificado: style removido e classe 'cart-card' adicionada -->
-    <div class="card cart-card">
+    <div class="card card-cart-spacing">
       <h2>🛒 Carrinho</h2>
       <div id="cartContainer">
         <ul id="cartItems" class="cart-items"></ul>
-        <!-- Modificado: style removido, formatação foi para o CSS -->
-        <p id="cartTotal">Total: R$ 0,00</p>
+        <p id="cartTotal" class="cart-total-text">Total: R$ 0,00</p>
         <button id="checkoutBtn" class="btn">Finalizar Pedido</button>
       </div>
-      <!-- Modificado: style removido, formatação foi para o CSS -->
-      <p id="cartEmpty">Seu carrinho está vazio.</p>
+      <p id="cartEmpty" class="cart-empty-text">Seu carrinho está vazio.</p>
     </div>
   </div>
 
+  <!-- Modal de Pagamento -->
+  <div id="paymentModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closePaymentModal()">&times;</span>
+      <h2>Finalizar Pedido</h2>
+      <p id="paymentTotal">Total: R$ 0,00</p>
+      <div class="form-group">
+        <label for="paymentMethod">Forma de Pagamento</label>
+        <select id="paymentMethod">
+          <option value="pix">Pix</option>
+          <option value="cartao">Cartão de Crédito</option>
+          <option value="dinheiro">Dinheiro</option>
+        </select>
+      </div>
+      <button class="btn" onclick="confirmPayment()">Pagar</button>
+      <button class="btn btn-outline" onclick="closePaymentModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="js/toast.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

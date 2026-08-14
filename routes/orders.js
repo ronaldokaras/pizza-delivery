@@ -1,11 +1,12 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticate, authorizeAdmin } = require('../middleware/auth');
+const { sendOrderConfirmation } = require('../services/emailService');
 const router = express.Router();
 
 // POST /api/orders (usuário autenticado)
 router.post('/', authenticate, async (req, res) => {
-  const { items, total } = req.body;
+  const { items, total, payment_method } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Pedido vazio' });
   }
@@ -13,10 +14,21 @@ router.post('/', authenticate, async (req, res) => {
   const itemsJson = JSON.stringify(items);
   try {
     const result = await pool.query(
-      'INSERT INTO orders (user_id, items, total) VALUES ($1, $2, $3) RETURNING *',
-      [req.user.id, itemsJson, total]
+      'INSERT INTO orders (user_id, items, total, payment_method) VALUES ($1, $2, $3, $4) RETURNING *',
+      [req.user.id, itemsJson, total, payment_method || null]
     );
-    res.status(201).json(result.rows[0]);
+    const order = result.rows[0];
+
+    // Buscar email do usuário
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
+    const userEmail = userResult.rows[0]?.email;
+
+    // Enviar e-mail (não bloqueante)
+    if (userEmail) {
+      sendOrderConfirmation(userEmail, order).catch(err => console.error('Erro no envio de email:', err));
+    }
+
+    res.status(201).json(order);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro no servidor' });
