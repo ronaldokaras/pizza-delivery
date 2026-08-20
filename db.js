@@ -11,6 +11,7 @@ const pool = new Pool({
 async function initDB() {
   const client = await pool.connect();
   try {
+    // Criar tabelas se não existirem
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -40,6 +41,10 @@ async function initDB() {
       );
     `);
 
+    // ✅ Garantir que a coluna payment_method exista (para bancos antigos)
+    await client.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT;');
+
+    // Seed: usuário admin
     const adminExists = await client.query('SELECT id FROM users WHERE email = $1', ['admin@example.com']);
     if (adminExists.rowCount === 0) {
       const hashedPassword = bcrypt.hashSync('admin123', 10);
@@ -50,6 +55,7 @@ async function initDB() {
       console.log('✅ Usuário admin criado: admin@example.com / admin123');
     }
 
+    // Seed: pizzas de exemplo
     const pizzaCount = await client.query('SELECT COUNT(*) FROM pizzas');
     if (parseInt(pizzaCount.rows[0].count) === 0) {
       const pizzas = [
