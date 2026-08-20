@@ -22,19 +22,19 @@
       <h2>Adicionar Nova Pizza</h2>
       <form id="pizzaForm">
         <div class="form-group">
-          <label>Nome</label>
+          <label for="pizzaName">Nome</label>
           <input type="text" id="pizzaName" required>
         </div>
         <div class="form-group">
-          <label>Descrição</label>
+          <label for="pizzaDescription">Descrição</label>
           <textarea id="pizzaDescription" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label>Preço (R$)</label>
+          <label for="pizzaPrice">Preço (R$)</label>
           <input type="number" id="pizzaPrice" step="0.01" min="0" required>
         </div>
         <div class="form-group">
-          <label>URL da Imagem</label>
+          <label for="pizzaImage">URL da Imagem</label>
           <input type="url" id="pizzaImage" placeholder="https://...">
         </div>
         <button type="submit" class="btn">Adicionar</button>

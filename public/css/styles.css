@@ -1021,7 +1021,6 @@ form .btn,
    ========================================= */
 .table-responsive {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   margin-bottom: var(--space-lg);
   border-radius: var(--radius-sm);
 }
@@ -1265,9 +1264,10 @@ tbody tr:hover td {
   background: #f97316;
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #334155 #0f172a;
+@supports (scrollbar-color: auto) {
+  * {
+    scrollbar-color: #334155 #0f172a;
+  }
 }
 
 /* =========================================
