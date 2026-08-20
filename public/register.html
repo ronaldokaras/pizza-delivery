@@ -12,25 +12,29 @@
     <div><a href="index.html">Voltar ao Cardápio</a></div>
   </nav>
 
-  <div class="container auth-container">
+  <div class="container" style="max-width: 400px; margin-top: 50px;">
     <div class="card">
       <h2>Criar Conta</h2>
       <form id="registerForm">
         <div class="form-group">
-          <label for="name">Nome</label>
+          <label>Nome</label>
           <input type="text" id="name" required>
         </div>
         <div class="form-group">
-          <label for="email">Email</label>
+          <label>Email</label>
           <input type="email" id="email" required>
         </div>
         <div class="form-group">
-          <label for="password">Senha</label>
+          <label>Senha</label>
           <input type="password" id="password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Endereço de entrega</label>
+          <input type="text" id="address" placeholder="Rua, número, bairro, cidade" required>
         </div>
         <button type="submit" class="btn">Cadastrar</button>
       </form>
-      <p class="auth-link">Já tem conta? <a href="login.html">Entrar</a></p>
+      <p style="margin-top: 15px;">Já tem conta? <a href="login.html">Entrar</a></p>
     </div>
   </div>
 

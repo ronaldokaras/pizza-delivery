@@ -21,10 +21,6 @@ services:
     environment:
       DATABASE_URL: postgres://pizza_user:pizza_password@db:5432/pizza_delivery
       JWT_SECRET: minha-chave-secreta-super-forte
-      # Opcional: variáveis de email para envio real
-      # EMAIL_HOST: smtp.seuprovedor.com
-      # EMAIL_USER: seuemail@dominio.com
-      # EMAIL_PASS: suasenha
     depends_on:
       - db
 

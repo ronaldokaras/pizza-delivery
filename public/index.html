@@ -27,14 +27,14 @@
 
     <div id="pizzaGrid" class="grid"></div>
 
-    <div class="card card-cart-spacing">
+    <div class="card" style="margin-top: 30px;">
       <h2>🛒 Carrinho</h2>
       <div id="cartContainer">
         <ul id="cartItems" class="cart-items"></ul>
-        <p id="cartTotal" class="cart-total-text">Total: R$ 0,00</p>
+        <p id="cartTotal" style="font-weight: bold; margin-top: 10px;">Total: R$ 0,00</p>
         <button id="checkoutBtn" class="btn">Finalizar Pedido</button>
       </div>
-      <p id="cartEmpty" class="cart-empty-text">Seu carrinho está vazio.</p>
+      <p id="cartEmpty" style="color: var(--muted);">Seu carrinho está vazio.</p>
     </div>
   </div>
 
@@ -45,7 +45,15 @@
       <h2>Finalizar Pedido</h2>
       <p id="paymentTotal">Total: R$ 0,00</p>
       <div class="form-group">
-        <label for="paymentMethod">Forma de Pagamento</label>
+        <label>Endereço de entrega</label>
+        <input type="text" id="deliveryAddress" placeholder="Rua, número, bairro, cidade" required>
+      </div>
+      <div class="form-group">
+        <label>E-mail para contato</label>
+        <input type="email" id="contactEmail" placeholder="seuemail@exemplo.com">
+      </div>
+      <div class="form-group">
+        <label>Forma de Pagamento</label>
         <select id="paymentMethod">
           <option value="pix">Pix</option>
           <option value="cartao">Cartão de Crédito</option>

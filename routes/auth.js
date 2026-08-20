@@ -8,9 +8,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'pizza-secret-change-me';
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'Preencha todos os campos' });
+  const { name, email, password, address } = req.body;
+  if (!name || !email || !password || !address) {
+    return res.status(400).json({ error: 'Preencha todos os campos obrigatórios' });
   }
   if (password.length < 6) {
     return res.status(400).json({ error: 'A senha deve ter no mínimo 6 caracteres' });
@@ -24,8 +24,8 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = bcrypt.hashSync(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, role',
-      [name, email, hashedPassword]
+      'INSERT INTO users (name, email, password, address) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, address',
+      [name, email, hashedPassword, address]
     );
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
 
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    const userData = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const userData = { id: user.id, name: user.name, email: user.email, role: user.role, address: user.address };
     res.json({ token, user: userData });
   } catch (err) {
     console.error(err);
@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, email, role FROM users WHERE id = $1', [req.user.id]);
+    const result = await pool.query('SELECT id, name, email, role, address FROM users WHERE id = $1', [req.user.id]);
     if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
     res.json({ user: result.rows[0] });
   } catch (err) {

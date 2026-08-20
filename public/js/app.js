@@ -2,7 +2,6 @@ let cart = JSON.parse(localStorage.getItem('cart')) || [];
 const token = localStorage.getItem('token');
 let allPizzas = [];
 
-// Navegação
 function updateNav() {
   const loginLink = document.getElementById('loginLink');
   const registerLink = document.getElementById('registerLink');
@@ -15,15 +14,11 @@ function updateNav() {
     registerLink.classList.add('hidden');
     userLink.classList.remove('hidden');
     logoutLink.classList.remove('hidden');
-
     const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.role === 'admin') {
-      adminLink.classList.remove('hidden');
-    }
+    if (user && user.role === 'admin') adminLink.classList.remove('hidden');
   }
 }
 
-// Carregar pizzas
 async function loadPizzas() {
   try {
     const res = await fetch('/api/menu');
@@ -58,14 +53,10 @@ function filterPizzas() {
   renderPizzas(filtered);
 }
 
-// Carrinho
 function addToCart(id, name, price) {
   const existing = cart.find(item => item.pizza_id === id);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ pizza_id: id, name, price, quantity: 1 });
-  }
+  if (existing) existing.quantity += 1;
+  else cart.push({ pizza_id: id, name, price, quantity: 1 });
   localStorage.setItem('cart', JSON.stringify(cart));
   renderCart();
 }
@@ -80,9 +71,7 @@ function changeQty(id, delta) {
   const item = cart.find(i => i.pizza_id === id);
   if (!item) return;
   item.quantity += delta;
-  if (item.quantity <= 0) {
-    cart = cart.filter(i => i.pizza_id !== id);
-  }
+  if (item.quantity <= 0) cart = cart.filter(i => i.pizza_id !== id);
   localStorage.setItem('cart', JSON.stringify(cart));
   renderCart();
 }
@@ -100,7 +89,6 @@ function renderCart() {
     checkoutBtn.style.display = 'none';
     return;
   }
-
   cartEmpty.style.display = 'none';
   checkoutBtn.style.display = 'block';
 
@@ -121,7 +109,6 @@ function renderCart() {
   cartTotal.textContent = `Total: R$ ${total.toFixed(2)}`;
 }
 
-// Modal de pagamento
 function openPaymentModal() {
   if (!token) {
     showToast('Você precisa estar logado para fazer um pedido.', 'warning');
@@ -131,6 +118,15 @@ function openPaymentModal() {
   if (cart.length === 0) return;
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   document.getElementById('paymentTotal').textContent = `Total: R$ ${total.toFixed(2)}`;
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user) {
+    document.getElementById('deliveryAddress').value = user.address || '';
+    document.getElementById('contactEmail').value = user.email || '';
+  } else {
+    document.getElementById('deliveryAddress').value = '';
+    document.getElementById('contactEmail').value = '';
+  }
   document.getElementById('paymentModal').classList.remove('hidden');
 }
 
@@ -140,6 +136,12 @@ function closePaymentModal() {
 
 async function confirmPayment() {
   const method = document.getElementById('paymentMethod').value;
+  const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
+  const contactEmail = document.getElementById('contactEmail').value.trim();
+  if (!deliveryAddress) {
+    showToast('Informe o endereço de entrega', 'error');
+    return;
+  }
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   try {
     const res = await fetch('/api/orders', {
@@ -151,10 +153,11 @@ async function confirmPayment() {
       body: JSON.stringify({
         items: cart,
         total: total,
-        payment_method: method
+        payment_method: method,
+        delivery_address: deliveryAddress,
+        contact_email: contactEmail || null
       })
     });
-
     if (res.ok) {
       showToast('Pedido realizado com sucesso!', 'success');
       cart = [];

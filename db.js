@@ -11,14 +11,14 @@ const pool = new Pool({
 async function initDB() {
   const client = await pool.connect();
   try {
-    // Criar tabelas se não existirem
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        role TEXT DEFAULT 'user'
+        role TEXT DEFAULT 'user',
+        address TEXT
       );
 
       CREATE TABLE IF NOT EXISTS pizzas (
@@ -37,25 +37,29 @@ async function initDB() {
         total REAL NOT NULL,
         status TEXT DEFAULT 'pending',
         payment_method TEXT,
+        delivery_address TEXT,
+        contact_email TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // ✅ Garantir que a coluna payment_method exista (para bancos antigos)
-    await client.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT;');
+    // ✅ Migrações para bancos antigos
+    await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;');
+    await client.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;');
+    await client.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_email TEXT;');
 
-    // Seed: usuário admin
+    // Seed admin
     const adminExists = await client.query('SELECT id FROM users WHERE email = $1', ['admin@example.com']);
     if (adminExists.rowCount === 0) {
       const hashedPassword = bcrypt.hashSync('admin123', 10);
       await client.query(
-        'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)',
-        ['Administrador', 'admin@example.com', hashedPassword, 'admin']
+        'INSERT INTO users (name, email, password, role, address) VALUES ($1, $2, $3, $4, $5)',
+        ['Administrador', 'admin@example.com', hashedPassword, 'admin', 'Rua dos Administradores, 123']
       );
       console.log('✅ Usuário admin criado: admin@example.com / admin123');
     }
 
-    // Seed: pizzas de exemplo
+    // Seed pizzas
     const pizzaCount = await client.query('SELECT COUNT(*) FROM pizzas');
     if (parseInt(pizzaCount.rows[0].count) === 0) {
       const pizzas = [

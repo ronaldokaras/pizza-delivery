@@ -1,7 +1,5 @@
 const token = localStorage.getItem('token');
-if (!token) {
-  window.location.href = 'login.html';
-}
+if (!token) window.location.href = 'login.html';
 
 let pizzas = [];
 let orders = [];
@@ -57,10 +55,11 @@ function renderOrdersTable() {
   tbody.innerHTML = orders.map(o => `
     <tr>
       <td>${o.id}</td>
-      <td>${o.user_name} (${o.user_email})</td>
+      <td>${o.user_name} (${o.contact_email || o.user_email})</td>
       <td>${o.items.map(i => `${i.name} x${i.quantity}`).join(', ')}</td>
       <td>R$ ${o.total.toFixed(2)}</td>
       <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+      <td>${o.delivery_address || 'N/A'}</td>
       <td>${new Date(o.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
       <td>
         <select onchange="updateOrderStatus(${o.id}, this.value)">
@@ -80,14 +79,10 @@ async function addPizza(e) {
   const description = document.getElementById('pizzaDescription').value;
   const price = parseFloat(document.getElementById('pizzaPrice').value);
   const image_url = document.getElementById('pizzaImage').value;
-
   try {
     const res = await fetch('/api/menu', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ name, description, price, image_url })
     });
     if (res.ok) {
@@ -98,9 +93,7 @@ async function addPizza(e) {
       const data = await res.json();
       showToast(data.error || 'Erro ao adicionar', 'error');
     }
-  } catch (err) {
-    showToast('Erro de conexão', 'error');
-  }
+  } catch (err) { showToast('Erro de conexão', 'error'); }
 }
 
 async function deletePizza(id) {
@@ -110,13 +103,8 @@ async function deletePizza(id) {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (res.ok) {
-      showToast('Pizza excluída', 'success');
-      loadPizzas();
-    }
-  } catch (err) {
-    showToast('Erro de conexão', 'error');
-  }
+    if (res.ok) { showToast('Pizza excluída', 'success'); loadPizzas(); }
+  } catch (err) { showToast('Erro de conexão', 'error'); }
 }
 
 async function editPizza(id) {
@@ -125,64 +113,42 @@ async function editPizza(id) {
   const description = prompt('Descrição:', pizza.description);
   const price = prompt('Preço:', pizza.price);
   const image_url = prompt('URL da imagem:', pizza.image_url || '');
-
   if (!name || !price) return;
-
   try {
     const res = await fetch(`/api/menu/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ name, description, price: parseFloat(price), image_url })
     });
-    if (res.ok) {
-      showToast('Pizza atualizada', 'success');
-      loadPizzas();
-    }
-  } catch (err) {
-    showToast('Erro de conexão', 'error');
-  }
+    if (res.ok) { showToast('Pizza atualizada', 'success'); loadPizzas(); }
+  } catch (err) { showToast('Erro de conexão', 'error'); }
 }
 
 async function updateOrderStatus(orderId, status) {
   try {
     const res = await fetch(`/api/orders/${orderId}/status`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ status })
     });
-    if (res.ok) {
-      showToast('Status atualizado', 'success');
-      loadOrders();
-    } else {
+    if (res.ok) { showToast('Status atualizado', 'success'); loadOrders(); }
+    else {
       const data = await res.json();
       showToast(data.error || 'Erro', 'error');
     }
-  } catch (err) {
-    showToast('Erro de conexão', 'error');
-  }
+  } catch (err) { showToast('Erro de conexão', 'error'); }
 }
 
-// Polling para novos pedidos
 async function checkNewOrders() {
   try {
-    const res = await fetch('/api/orders/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const res = await fetch('/api/orders/all', { headers: { 'Authorization': `Bearer ${token}` } });
     const newOrders = await res.json();
     if (newOrders.length > 0 && newOrders[0].id > lastOrderId) {
       showToast(`🛒 Novo pedido #${newOrders[0].id} recebido!`, 'warning', 5000);
       lastOrderId = newOrders[0].id;
       loadOrders();
     }
-  } catch (err) {
-    console.error('Erro ao verificar novos pedidos:', err);
-  }
+  } catch (err) { console.error('Erro ao verificar novos pedidos:', err); }
 }
 
 function logout() {
@@ -200,5 +166,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('pizzaForm').addEventListener('submit', addPizza);
   document.getElementById('logoutLink').addEventListener('click', logout);
-  setInterval(checkNewOrders, 10000); // a cada 10s
+  setInterval(checkNewOrders, 10000);
 });
